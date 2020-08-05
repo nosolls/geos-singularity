@@ -1,0 +1,50 @@
+Bootstrap: library
+From: nosolls/default/fedora-baselibs:current
+
+# This corresponds to nosolls/default/fedora-fvdycore:current on the
+# singularity library
+%environment
+  # Paths for the user to use
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4
+  export PATH=/mepo:$PATH
+  export MKLROOT=/opt/intel/mkl
+  # Discover needs this, otherwise it tries to access the account's tmpdir
+  export TMPDIR=/tmp
+
+%post
+  # Singularity needs environment variables when building
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4
+  # installs needed packages
+  yum update -y
+  rpm --import https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+  yum install -y yum-utils
+  yum-config-manager --add-repo https://yum.repos.intel.com/mkl/setup/intel-mkl.repo
+  yum install -y intel-mkl-64bit-2019.4-070
+  yum install -y perl-Env tcsh python3-pyyaml python3-numpy python3-numpy-f2py rsync
+  yum clean all
+  rm -rf /var/cache/yum/*
+  # installs mepo and mkl
+  cd / && git clone https://github.com/GEOS-ESM/mepo.git
+  export PATH=/mepo:$PATH
+  export MKLROOT=/opt/intel/mkl
+  # grabs files for fvdycore
+  cd /
+  git clone https://github.com/GEOS-ESM/GEOSfvdycore.git 
+  # cd in and grab extra files
+  cd GEOSfvdycore
+  mepo init && mepo clone
+  # start build
+  mkdir build
+  cd build
+  cmake .. -DBASEDIR=/baselibs/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4/Linux -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_C_Compiler=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=../install
+  make -j6 install

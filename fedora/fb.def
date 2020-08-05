@@ -1,0 +1,67 @@
+Bootstrap: docker
+From: fedora:33
+
+# This installs the base libraries needed for GEOS. This corresponds to nosolls/default/fedora-baselibs:current on
+# the singularity library. This could definitely be more minimal.
+%environment
+  # Creates variables for use in container
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4
+
+%post
+  # install prereqs
+  yum update -y
+  yum install -y gcc g++ gfortran flex bison git tar cmake gzip curl java-11-openjdk python2 dialog perl gawk make \
+    autoconf automake binutils libtool byacc flex expat-devel file texinfo libtirpc libtirpc-devel wget bzip2 \
+    glibc glibc-devel glibc-headers
+  yum clean all
+  rm -rf /var/cache/yum/*
+  ### GCC ##
+  echo "GCC Part"
+  # Create directory
+  mkdir /src-gcc && cd /src-gcc
+  # Grab files and unzip
+  curl -O https://ftp.gnu.org/gnu/gcc/gcc-9.3.0/gcc-9.3.0.tar.gz
+  tar xzf gcc-9.3.0.tar.gz
+  # Build
+  cd gcc-9.3.0/ 
+  ./contrib/download_prerequisites
+  mkdir bld-gcc && cd bld-gcc
+  ../configure --prefix=/gcc --enable-languages=c,c++,fortran --disable-multilib
+  make -j 8 
+  make install
+  # Remove files
+  rm -rf /src-gcc
+  # Variables for use in install
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  ### OPENMPI ###
+  # Create build directory
+  mkdir /openmpi-build && cd /openmpi-build
+  # Grab files
+  curl -O https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.4.tar.gz
+  tar zxvf openmpi-4.0.4.tar.gz
+  # Start building
+  cd openmpi-4.0.4/
+  ./configure --prefix=/opt/openmpi-4.0.4 --enable-static
+  make -j 8 && make install
+  # Delete files
+  rm -rf /openmpi-build
+  # Variables for use in install
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  # create directory
+  mkdir /baselibs && cd /baselibs
+  # Clone
+  git clone --recurse-submodules https://github.com/GEOS-ESM/ESMA-Baselibs.git
+  # install
+  cd ESMA-Baselibs
+  make -j8 install BUILD=ESSENTIAL ESMF_COMM=openmpi CONFIG_SETUP=gfortran_9.3.0-openmpi_4.0.4 
+  make verify
+  # Delete files 
+  rm -rf /baselibs/ESMA-Baselibs

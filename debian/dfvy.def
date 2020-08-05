@@ -1,0 +1,49 @@
+Bootstrap: library
+From: nosolls/default/debian-baselibs:current
+
+# This corresponds to nosolls/default/debian-fvdycore:current on
+# the singularity library
+%environment
+  # Paths for running the container 
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4
+  export PATH=/mepo:$PATH
+  # Needed to run on discover
+  export TMPDIR=/tmp
+
+%post
+  # singularity needs environment variables for building
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.4
+  export PATH=/opt/openmpi-4.0.4/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.4/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4
+  # installs needed packages
+  cd /tmp
+  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+  apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+  sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+  apt update -y
+  apt install -y intel-mkl-64bit-2019.4-070
+  apt install -y libenv-path-perl tcsh python3-yaml python3-numpy rsync
+  apt clean
+  # installs mepo
+  cd / && git clone https://github.com/GEOS-ESM/mepo.git 
+  export PATH=/mepo:$PATH
+  export MKLROOT=/opt/intel/mkl
+  # grabs files for fvdycore
+  cd /
+  git clone https://github.com/GEOS-ESM/GEOSfvdycore
+  # cd in and grab extra files
+  cd GEOSfvdycore
+  mepo init && mepo clone
+  # start build
+  mkdir build
+  cd build
+  cmake .. -DBASEDIR=/baselibs/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.4/Linux -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_C_Compiler=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=../install -DUSE_F2PY=OFF
+  make -j6 install
