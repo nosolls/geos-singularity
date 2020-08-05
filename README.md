@@ -1,5 +1,5 @@
 # GEOS fixtures in Singularity
-These files are various definition files for using GEOSfvdycore and GEOSgcm within Singularity. Most are on the Singularity library.
+These files are various definition files for using GEOSfvdycore and GEOSgcm within Singularity. Most are on the Singularity library. There are constant changes to GEOS, so these may not build because of that. 
 
 ### Which files are which?
 
