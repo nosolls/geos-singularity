@@ -5,8 +5,11 @@ These files are various definition files for using GEOSfvdycore and GEOSgcm with
 
 Files ending in:
 
+
 `b.def`   : Indicate the container installs base libraries
+
 `fvy.def` : Indicate the container installs GEOSfvdycore
+
 `gcm.def` : Indicate the container installs GEOSgcm
 
 ## How do I use these?
