@@ -1,5 +1,4 @@
 # GEOS files in Singularity
-<<<<<<< HEAD
 These files are various definition files for using GEOSfvdycore and GEOSgcm within Singularity. Most are on the Singularity library.
 
 ## Which files are which?
@@ -33,6 +32,3 @@ Now you can use that sandbox for runs instead of the image. This will save time 
 ## Do I have to make changes to the run script for these containers to work with slurm?
 
 If you want to change the amount of tasks the run script specifies or use multiple nodes, then yes. A specified amount of tasks (`ntasks`) will already be mad/e once an experiment derictory is created, and you should ideally go by this. However, if you'd like to change these values, the variables `FV_NX` and `FV_NY` in the runscript will have to be changed to what number of nodes / number of cores you'd like. 
-=======
-
->>>>>>> e853871... Expanding README
