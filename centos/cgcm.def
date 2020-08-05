@@ -1,0 +1,37 @@
+Bootstrap: docker
+From: gmao/geos-build-env-gcc-source:6.0.13-openmpi_4.0.3-gcc_9.3.0
+
+# Because of storage quotas, this isn't on the singularity library.
+%environment
+  # Used when running container
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.3
+  export PATH=/opt/openmpi-4.0.3/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.3/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.3
+  export MKLROOT=/opt/intel/mkl
+  export PATH=/mepo:/manage_externals:$PATH
+
+%post
+  # singularity needs environment variables during run
+  export PATH=/gcc/bin:${PATH}
+  export LD_LIBRARY_PATH=/gcc/lib64:${PATH}
+  export OPENMPI=/opt/openmpi-4.0.3
+  export PATH=/opt/openmpi-4.0.3/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi-4.0.3/lib:$LD_LIBRARY_PATH
+  export BASEDIR=/baselibs/6.0.13/x86_64-unknown-linux-gnu/gfortran_9.3.0-openmpi_4.0.3
+  export MKLROOT=/opt/intel/mkl
+  export PATH=/mepo:/manage_externals:$PATH
+  # grab repo
+  git clone https://github.com/GEOS-ESM/GEOSgcm
+  # cd in and grab extra files
+  cd GEOSgcm
+  mepo init && mepo clone
+  mepo checkout feature/mathomp4/add-fv3-standalone-setup FVdycoreCubed_GridComp
+  # start build
+  mkdir build
+  cd build
+  cmake .. -DBASEDIR=$BASEDIR/Linux -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_C_Compiler=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=../install
+  make -j6 install
+.
